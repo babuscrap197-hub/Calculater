@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Liquid Glass Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg1: #0f1724;
+    --bg2: #071022;
+    --glass: rgba(255,255,255,0.06);
+    --accent: rgba(120,180,255,0.95);
+    --muted: rgba(255,255,255,0.7);
+    --radius: 18px;
+  }
+
+  *{
+    font-family:"Inter",sans-serif;
+  }
+
+  html,body{
+    height:100%;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(10,30,60,0.5), transparent 10%),
+                radial-gradient(900px 500px at 90% 90%, rgba(80,30,90,0.15), transparent 15%),
+                linear-gradient(180deg,var(--bg1),var(--bg2));
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:20px;
+  }
+
+  /* Title */
+  .title{
+    text-align:center;
+    font-size:1.3rem;
+    font-weight:700;
+    color:rgba(255,255,255,0.9);
+    margin-bottom:18px;
+    letter-spacing:0.5px;
+    text-shadow:0 3px 8px rgba(0,0,0,0.5);
+  }
+
+  /* calculator wrapper */
+  .calc-wrap{
+    width: min(420px, 94vw);
+    padding:22px;
+    border-radius: calc(var(--radius) + 6px);
+    background: rgba(255,255,255,0.03);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px) saturate(120%);
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow:hidden;
+  }
+
+  /* display */
+  .display{
+    border-radius: 14px;
+    padding:18px;
+    margin-bottom:18px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .history{
+    font-size:0.9rem;
+    color: rgba(255,255,255,0.55);
+    min-height:18px;
+    text-align:right;
+  }
+  .current{
+    font-size:2.1rem;
+    font-weight:700;
+    text-align:right;
+    color: white;
+  }
+
+  /* keypad */
+  .keys{
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:12px;
+  }
+
+  .btn{
+    padding:16px;
+    font-size:1.1rem;
+    border-radius:12px;
+    background: rgba(255,255,255,0.02);
+    text-align:center;
+    color:white;
+    border:1px solid rgba(255,255,255,0.06);
+    box-shadow:0 6px 18px rgba(0,0,0,0.4);
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .btn.wide{
+    grid-column: span 2;
+  }
+
+  .operator{
+    background: rgba(120,180,255,0.05);
+  }
+  .control{
+    background: rgba(255,120,120,0.05);
+  }
+  .equal{
+    background: rgba(120,255,200,0.1);
+    font-weight:700;
+    color:#062e1d;
+  }
+</style>
+</head>
+
+<body>
+
+<h2 class="title">Create by Sanu (Shahan)</h2>
+
+<div class="calc-wrap" id="calculator">
+
+  <div class="display">
+    <div class="history" id="history">&nbsp;</div>
+    <div class="current" id="current">0</div>
+  </div>
+
+  <div class="keys" id="keys">
+      <button class="btn control" data-action="clear">AC</button>
+      <button class="btn control" data-action="back">⌫</button>
+      <button class="btn control" data-action="percent">%</button>
+      <button class="btn operator" data-value="/">÷</button>
+
+      <button class="btn" data-value="7">7</button>
+      <button class="btn" data-value="8">8</button>
+      <button class="btn" data-value="9">9</button>
+      <button class="btn operator" data-value="*">×</button>
+
+      <button class="btn" data-value="4">4</button>
+      <button class="btn" data-value="5">5</button>
+      <button class="btn" data-value="6">6</button>
+      <button class="btn operator" data-value="-">−</button>
+
+      <button class="btn" data-value="1">1</button>
+      <button class="btn" data-value="2">2</button>
+      <button class="btn" data-value="3">3</button>
+      <button class="btn operator" data-value="+">+</button>
+
+      <button class="btn wide" data-value="0">0</button>
+      <button class="btn" data-value=".">.</button>
+      <button class="btn equal" data-action="equals">=</button>
+  </div>
+
+</div>
+
+<script>
+let expression = "";
+let input = "0";
+let justCalculated = false;
+
+const historyEl = document.getElementById("history");
+const currentEl = document.getElementById("current");
+
+function refresh(){
+  historyEl.textContent = expression || "\u00A0";
+  currentEl.textContent = input;
+}
+
+function appendCharacter(ch){
+  if(justCalculated){
+    expression = "";
+    input = (ch === ".") ? "0." : ch;
+    justCalculated = false;
+    return refresh();
+  }
+
+  if(ch === "."){
+    if(input.includes(".")) return;
+    input = (input === "0") ? "0." : input + ".";
+  } else {
+    input = (input === "0") ? ch : input + ch;
+  }
+  refresh();
+}
+
+function pushOperator(op){
+  if(justCalculated){
+    expression = input;
+    justCalculated = false;
+  }
+  if(input !== ""){
+    expression += (expression ? " " : "") + input + " " + op + " ";
+    input = "";
+    return refresh();
+  }
+}
+
+function percent(){
+  input = (parseFloat(input) / 100).toString();
+  refresh();
+}
+
+function backspace(){
+  if(input.length <= 1){
+    input = "0";
+  } else {
+    input = input.slice(0, -1);
+  }
+  refresh();
+}
+
+function clearAll(){
+  expression = "";
+  input = "0";
+  refresh();
+}
+
+function compute(){
+  let full = expression + " " + input;
+
+  try{
+    let result = Function("return (" + full + ")")();
+    expression = "";
+    input = result.toString();
+    justCalculated = true;
+    refresh();
+  } catch {
+    currentEl.textContent = "Error";
+    setTimeout(()=>refresh(), 900);
+  }
+}
+
+document.getElementById("keys").addEventListener("click",(e)=>{
+  let btn = e.target;
+  let val = btn.dataset.value;
+  let action = btn.dataset.action;
+
+  if(val){
+    if(/[0-9.]/.test(val)) appendCharacter(val);
+    else pushOperator(val);
+  }
+  if(action === "clear") clearAll();
+  if(action === "back") backspace();
+  if(action === "percent") percent();
+  if(action === "equals") compute();
+});
+</script>
+
+</body>
+</html>
